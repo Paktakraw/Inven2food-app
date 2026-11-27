@@ -23,6 +23,7 @@
 - ไม่มีรายการสั่ง ลูกค้า การขาย ราคาขาย กำไร และไม่มีการแจ้งเตือนแบบ push ในเวอร์ชันนี้
 - ทุกการแก้ยอดทำผ่านฟังก์ชัน SQL เท่านั้น ฟังก์ชันที่แก้ยอดเป็น `SECURITY DEFINER` + `set search_path = public` และตรวจเจ้าของด้วย `auth.uid()` เอง (เพราะต้องถอดสิทธิ์เขียนตรงบน `lots`/`stock_movements` จากผู้ใช้)
 - รหัสข้อผิดพลาดจากฟังก์ชัน SQL: `raise exception '<CODE>'` โดยข้อความเท่ากับรหัส รหัสที่ใช้: `INSUFFICIENT_STOCK`, `INVALID_QTY`, `RECIPE_EMPTY`, `ALREADY_CANCELLED`, `UNIT_MISMATCH`, `EXPIRY_IN_PAST`, `NOT_FOUND`
+- **การแจ้งผลเมื่อเพิ่ม/ลบ (ผู้ใช้เลือกแบบ ข):** การลบหรือย้อนยอด (เก็บถาวรวัตถุดิบหรือรายการอาหาร, ตัดทิ้งรอบที่ซื้อ, ยกเลิกการทำ, ลบรายการซื้อของ) ต้องมี modal ถามยืนยันก่อน แล้วมี modal แจ้งผลหลังสำเร็จ (ปุ่ม "ตกลง"); การเพิ่มหรือบันทึก (สร้างวัตถุดิบ, รายการอาหาร, ยอดคงเหลือเริ่มต้น, ปรับยอด, บันทึกการทำ, นำเข้าคลัง, เพิ่มรายการซื้อ) ไม่มี modal แต่แสดงข้อความเล็กที่หายเองภายใน 2 วินาที (toast); ความล้มเหลวทุกกรณีแสดงข้อความไทยผ่าน `errorMessage`; ใช้คอมโพเนนต์กลาง `ConfirmDialog`, `ResultDialog` และฟังก์ชัน `notify` ที่สร้างใน Task 7 ข้อความทั้งหมดอยู่ใน `th.ts`; การลบแถววัตถุดิบในฟอร์มสูตรที่ยังไม่บันทึกไม่นับเป็นการลบข้อมูล ไม่ต้องมี modal; e2e ของทุก task ที่มีการเพิ่ม/ลบต้องตรวจ toast หรือยืนยันและปิด modal
 
 ## Review Focus
 
@@ -204,6 +205,7 @@ inven2food-app/
 - Consumes: `th`, `errorMessage`, `createClient`
 - Produces: `class DbError extends Error { code: string }`; `rpc<T>(name, args)` ใช้ซ้ำใน Task 8–11; หน้าที่เพิ่ม/แก้/เก็บถาวร (`archived`) วัตถุดิบ พร้อมชื่อ หน่วยฐาน ช่องเก็บเริ่มต้น จุดสั่งซื้อซ้ำ จำนวนวันเตือนหมดอายุ และจัดการหน่วยซื้อต่อวัตถุดิบ (ชื่อหน่วย + `factor` > 0)
 
+- Also produces (ข้อกำหนดแจ้งผลเมื่อเพิ่ม/ลบ): `src/components/confirm-dialog.tsx` (`ConfirmDialog` props `{ open: boolean; title: string; message: string; confirmLabel: string; cancelLabel: string; destructive?: boolean; onConfirm(): void | Promise<void>; onCancel(): void }`), `src/components/result-dialog.tsx` (`ResultDialog` props `{ open: boolean; title: string; message: string; okLabel: string; onClose(): void }`) และ `notify(message: string): void` ใน `src/components/notify.tsx` (toast เล็กที่หายเองใน 2 วินาที, มี `<Notifier />` วางใน `(app)/layout.tsx`); ใช้เป็นต้นแบบให้ Task 8–11 ทุกครั้งที่เพิ่มหรือลบ; เก็บวัตถุดิบถาวรในหน้านี้ต้องผ่านขั้นตอน ConfirmDialog → ResultDialog
 - [ ] **Step 1: เขียน e2e ที่ล้ม:** ล็อกอิน → หน้าวัตถุดิบ → เพิ่ม "ไข่" หน่วยฐาน ชิ้น, หน่วยซื้อ "ถาด" = 30 → เห็นแถว "ไข่" และหน่วยซื้อ "ถาด (30 ชิ้น)"; `factor = 0` ถูกปฏิเสธด้วยข้อความไทย; เก็บถาวรแล้วแถวหายจากรายการหลัก
 - [ ] **Step 2:** `npm run test:e2e -- ingredients` ต้องล้ม
 - [ ] **Step 3:** เขียนหน้าและฟอร์ม (Zod ตรวจ `factor > 0`, ชื่อไม่ว่าง) ข้อความทั้งหมดเพิ่มใน `th.ts`
