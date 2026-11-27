@@ -16,8 +16,17 @@ export async function testUserId(): Promise<string> {
 }
 
 // Child tables first (FK-safe order). Later tasks append their tables here.
-// Tables do not exist yet (Task 2 creates them), so a missing table is tolerated.
-const TABLES_CHILD_FIRST: string[] = []
+// stock_movements and lots are cleared through the service role (bypasses grants).
+const TABLES_CHILD_FIRST: string[] = [
+  'stock_movements',
+  'shopping_items',
+  'cooking_logs',
+  'recipe_items',
+  'lots',
+  'purchase_units',
+  'menus',
+  'ingredients',
+]
 
 export async function resetData(): Promise<void> {
   const ownerId = await testUserId()
