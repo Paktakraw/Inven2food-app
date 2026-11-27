@@ -38,6 +38,7 @@ Data model invariants to preserve:
 ## Conventions from the design
 
 - Dates are displayed and entered as dd/mm/yy with a two-digit Buddhist-era year (27/11/69, 01/12/69), set by the owner, and stored as ISO. Use the custom ThaiDateInput, never the browser date input. Currency is baht. All UI text lives in one central Thai strings file, and database functions return stable error codes that the front end maps to Thai messages.
+- Add/delete feedback (owner chose option ข): deleting or reversing (archive, discard a lot, cancel a cooking record, delete a shopping item) shows a confirm modal first and a result modal after; adding or saving shows only a small auto-dismissing toast (about 2 seconds); failures show a Thai message. Shared components ConfirmDialog, ResultDialog and notify.
 - Sign-ups are disabled after the owner's account is created. RLS is on for every table.
 - Never put the Supabase service-role key in front-end code.
 - Planned test stack: pgTAP (`supabase test db`) for FEFO, unit conversion, yield and cancellation logic, Vitest for helpers, Playwright for the main flows and a scan that fails on Latin text in visible UI. Once the project exists, replace this note with the real commands.
